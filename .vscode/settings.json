@@ -33,4 +33,6 @@
         "src-not-empty": true,
         "title-require": true
     }
+,
+"typescript.check.workspaceVersion": false
 }
