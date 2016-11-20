@@ -2,8 +2,43 @@ import { NgModule, Component } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
+class Article {
+    title: string;
+    link: string;
+    votes: number;
+
+    constructor(
+        title: string,
+        link: string,
+        votes?: number
+    ) {
+        this.title = title;
+        this.link = link;
+        this.votes = votes || 0;
+    }
+
+    voteUp(): void {
+        this.votes += 1;
+    }
+
+    voteDown(): void {
+        this.votes -= 1;
+    }
+
+    domain(): string {
+        try {
+            const link: string = this.link.split('//')[1];
+            return link.split('/')[0];
+
+        } catch (error) {
+            return null;
+        }
+    }
+}
+
 @Component({
     selector: 'reddit-article',
+    inputs: ['article'],
     host: {
         class: 'row'
     },
@@ -11,7 +46,7 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
     <div class="four wide column center alligned votes">
         <div class="ui statistic">
             <div class="value">
-                {{ votes }}
+                {{ article.votes }}
             </div>
             <div class="label">
                 Points
@@ -20,8 +55,11 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
     </div>
     <div class="twelve wide column">
         <a class="ui large header" href="{{ link }}">
-            {{ title }}
+            {{ article.title }}
         </a>
+        <div class="meta">
+            ({{ article.domain() }})
+        </div>
         <ul class="ui big horizontal list voters">
             <li class="item">
                 <a href (click)="voteUp()">
@@ -31,7 +69,7 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
             </li>
             <li class="item">
                 <a href (click)="voteDown()">
-                    <i class="arrow up icon"></i>
+                    <i class="arrow down icon"></i>
                         downvote
                 </a>
             </li>
@@ -40,30 +78,26 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
     `
 })
 class ArticleComponent {
-    votes: number;
-    title: string;
-    link: string;
+    article: Article;
 
-    constructor() {
-        this.title = 'Angular 2';
-        this.link = 'http://angular.io';
-        this.votes = 10;
+    // constructor() {
+    //     this.article = new Article('Angular 2', 'http://angular.io', 10);
+    // }
+
+    voteUp(): boolean {
+        this.article.voteUp();
+        return false;
     }
 
-    voteUp() {
-        this.votes += 1;
+    voteDown(): boolean {
+        this.article.voteDown();
+        return false;
     }
-
-    voteDown() {
-        this.votes -= 1;
-    }
-
 }
 
 @Component({
     selector: 'reddit',
     template: `
-    <div>
     <form class="ui large form segment">
         <h3 class="ui header">Add a link</h3>
         <div class="field">
@@ -80,15 +114,34 @@ class ArticleComponent {
         </button>
     </form>
     <div class="ui grid posts">
-        <reddit-article></reddit-article>
-    </div>
+        <reddit-article
+            *ngFor="let foobar of sortedArticles()"
+            [article]="foobar">
+        </reddit-article>
     </div>
     `
 })
 class RedditApp {
+    articles: Article[]; // same as -> articles: Array<Article> // articles is an array of type Article values!!
+
+    constructor() {
+        this.articles = [
+            new Article('Angular 2', 'http://angular.io', 3),
+            new Article('Fullstack', 'http://fullstack.io', 2),
+            new Article('Angular Homepage', 'http://angular.io', 1)
+        ];
+    }
+
     addArticle(title: HTMLInputElement, link: HTMLInputElement): boolean {
         console.log(`Adding article title: ${title.value} and link: ${link.value}`);
+        this.articles.push(new Article(title.value, link.value, 0));
+        title.value = '';
+        link.value = '';
         return false;
+    }
+
+    sortedArticles(): Array<Article> {
+        return this.articles.sort((a: Article, b: Article) => b.votes - a.votes);
     }
 }
 
